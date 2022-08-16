@@ -2,20 +2,29 @@ package com.yandex.ydb.tools.ddb2ddb;
 
 import java.io.FileInputStream;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
+import software.amazon.awssdk.services.dynamodb.model.PutRequest;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 import software.amazon.awssdk.services.dynamodb.model.TableStatus;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 /**
  *
@@ -84,8 +93,22 @@ public class DataGen {
         }
         LOG.info("Writing data to table {} ...", tableName);
         for (int i=0; i<1000; ++i) {
+            final List<WriteRequest> wr = new ArrayList<>();
             for (int j=0; j<10; ++j) {
+                long v = System.currentTimeMillis();
+                final Map<String, AttributeValue> m = new HashMap<>();
+                m.put("A", AttributeValue.fromS(String.valueOf(j)));
+                m.put("B", AttributeValue.fromS(String.valueOf(i)));
+                m.put("X", AttributeValue.fromN(String.valueOf(v)));
+                m.put("Y", AttributeValue.fromS(Long.toHexString(~v)));
+                m.put("Z", AttributeValue.fromS("Баба Яга нумер " + ((10*(i+1)) + i + 1)));
+                wr.add(WriteRequest.builder().putRequest(
+                        PutRequest.builder().item(m).build()
+                ).build());
             }
+            client.batchWriteItem(BatchWriteItemRequest.builder()
+                    .requestItems(Collections.singletonMap(tableName, wr))
+                    .build());
         }
     }
     
