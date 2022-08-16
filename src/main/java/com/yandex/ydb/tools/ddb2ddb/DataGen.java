@@ -1,28 +1,21 @@
 package com.yandex.ydb.tools.ddb2ddb;
 
 import java.io.FileInputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
-import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.PutRequest;
-import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 import software.amazon.awssdk.services.dynamodb.model.TableStatus;
@@ -45,7 +38,7 @@ public class DataGen {
     }
 
     public void run() throws Exception {
-        try (DynamoDbClient client = initClient()) {
+        try (DynamoDbClient client = config.newClient()) {
             run(client);
         }
     }
@@ -68,21 +61,9 @@ public class DataGen {
         }
     }
 
-    private DynamoDbClient initClient() {
-        DynamoDbClientBuilder builder = DynamoDbClient.builder();
-        builder.endpointOverride(URI.create(config.getEndpoint()));
-        builder.region(Region.of(config.getRegion()));
-        if (config.hasKey()) {
-            builder.credentialsProvider(
-                    StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create(config.getKeyId(), config.getKeySecret())));
-        }
-        return builder.build();
-    }
-
     private void run(DynamoDbClient client) throws Exception {
         TableDescription td;
-        if (null == (td = describeTable(client, tableName))) {
+        if (null == (td = Helpers.describeTable(client, tableName))) {
             td = createTable(client, tableName);
         }
         boolean loggedStatus = false;
@@ -92,7 +73,7 @@ public class DataGen {
                 loggedStatus = true;
             }
             try { Thread.sleep(500L); } catch(InterruptedException ix) {}
-            td = describeTable(client, tableName);
+            td = Helpers.describeTable(client, tableName);
             if (td == null)
                 throw new IllegalStateException("Table disappeared: " + tableName);
         }
@@ -117,15 +98,6 @@ public class DataGen {
         }
     }
     
-    private TableDescription describeTable(DynamoDbClient client, String tableName) {
-        DescribeTableRequest dtr = DescribeTableRequest.builder().tableName(tableName).build();
-        try {
-            return client.describeTable(dtr).table();
-        } catch(ResourceNotFoundException rnfe) {
-            return null;
-        }
-    }
-
     private TableDescription createTable(DynamoDbClient client, String tableName) {
         CreateTableRequest ctr = CreateTableRequest.builder()
                 .tableName(tableName)

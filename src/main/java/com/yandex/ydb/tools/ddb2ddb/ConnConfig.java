@@ -1,6 +1,12 @@
 package com.yandex.ydb.tools.ddb2ddb;
 
+import java.net.URI;
 import java.util.Properties;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 
 /**
  * DynamoDB connection configuration.
@@ -58,5 +64,17 @@ public class ConnConfig {
     public void setKeySecret(String keySecret) {
         this.keySecret = keySecret;
     }
-    
+
+    public DynamoDbClient newClient() {
+        DynamoDbClientBuilder builder = DynamoDbClient.builder();
+        builder.endpointOverride(URI.create(endpoint));
+        builder.region(Region.of(region));
+        if (hasKey()) {
+            builder.credentialsProvider(
+                    StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(keyId, keySecret)));
+        }
+        return builder.build();
+    }
+
 }
