@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
@@ -37,10 +39,14 @@ public class DataGen {
     private final String endpoint;
     private final String region;
     private final String tableName;
+    private final String authKeyId;
+    private final String authKeySecret;
     
     public DataGen(Properties jobFile) {
         this.endpoint = jobFile.getProperty("datagen.endpoint", "http://localhost:8000");
         this.region = jobFile.getProperty("datagen.region", "some-region");
+        this.authKeyId = jobFile.getProperty("datagen.auth.id");
+        this.authKeySecret = jobFile.getProperty("datagen.auth.secret");
         this.tableName = jobFile.getProperty("datagen.tableName", "MyTable");
     }
 
@@ -72,6 +78,11 @@ public class DataGen {
         DynamoDbClientBuilder builder = DynamoDbClient.builder();
         builder.endpointOverride(URI.create(endpoint));
         builder.region(Region.of(region));
+        if (authKeySecret!=null && authKeyId!=null) {
+            builder.credentialsProvider(
+                    StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(authKeyId, authKeySecret)));
+        }
         return builder.build();
     }
 
@@ -92,7 +103,7 @@ public class DataGen {
                 throw new IllegalStateException("Table disappeared: " + tableName);
         }
         LOG.info("Writing data to table {} ...", tableName);
-        for (int i=0; i<1000; ++i) {
+        for (int i=0; i<50; ++i) {
             final List<WriteRequest> wr = new ArrayList<>();
             for (int j=0; j<10; ++j) {
                 long v = System.currentTimeMillis();
