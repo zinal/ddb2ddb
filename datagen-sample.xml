@@ -8,7 +8,7 @@
 -->
 <entry key="datagen.endpoint">https://docapi.serverless.yandexcloud.net/ru-central1/b1gfvslmokutuvt2g019/etnvbffeqegu1ub2rg2o</entry>
 <entry key="datagen.region">region-1</entry>
-<entry key="datagen.auth.id">awskeyid</entry>
-<entry key="datagen.auth.secret">awskeysecret</entry>
+<entry key="datagen.keyId">awskeyid</entry>
+<entry key="datagen.keySecret">awskeysecret</entry>
 <entry key="datagen.tableName">Tab01</entry>
 </properties>

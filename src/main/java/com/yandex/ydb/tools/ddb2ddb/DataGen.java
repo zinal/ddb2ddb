@@ -36,17 +36,11 @@ public class DataGen {
     
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DataGen.class);
     
-    private final String endpoint;
-    private final String region;
+    private final ConnConfig config;
     private final String tableName;
-    private final String authKeyId;
-    private final String authKeySecret;
     
     public DataGen(Properties jobFile) {
-        this.endpoint = jobFile.getProperty("datagen.endpoint", "http://localhost:8000");
-        this.region = jobFile.getProperty("datagen.region", "some-region");
-        this.authKeyId = jobFile.getProperty("datagen.auth.id");
-        this.authKeySecret = jobFile.getProperty("datagen.auth.secret");
+        this.config = new ConnConfig(jobFile, "datagen");
         this.tableName = jobFile.getProperty("datagen.tableName", "MyTable");
     }
 
@@ -76,12 +70,12 @@ public class DataGen {
 
     private DynamoDbClient initClient() {
         DynamoDbClientBuilder builder = DynamoDbClient.builder();
-        builder.endpointOverride(URI.create(endpoint));
-        builder.region(Region.of(region));
-        if (authKeySecret!=null && authKeyId!=null) {
+        builder.endpointOverride(URI.create(config.getEndpoint()));
+        builder.region(Region.of(config.getRegion()));
+        if (config.hasKey()) {
             builder.credentialsProvider(
                     StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create(authKeyId, authKeySecret)));
+                            AwsBasicCredentials.create(config.getKeyId(), config.getKeySecret())));
         }
         return builder.build();
     }
