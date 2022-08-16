@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<comment>DataGen example input parameter file</comment>
+<entry key="datagen.endpoint">http://bor1.zinal.ru:8000</entry>
+<entry key="datagen.region">russia-1</entry>
+<entry key="datagen.tableName">Tab01</entry>
+</properties>
